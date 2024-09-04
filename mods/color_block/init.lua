@@ -5,6 +5,14 @@ local LOBBY_SIZE = 10
 local GAME_SIZE = 10
 local start_game = nil
 local ready = false
+--nodes
+
+
+minetest.register_node('color_block:default', {
+    description = 'Color Block Default',
+    tiles = { 'color_block_default.png' },
+    is_ground_content = true
+})
 for i = 0, 4 do
     minetest.register_node('color_block:stone_'..i, {
         description = 'Color Block Node: ' .. colors[i+1],
@@ -12,17 +20,19 @@ for i = 0, 4 do
         is_ground_content = true
     })
 end
-minetest.register_node('color_block:default', {
-    description = 'Color Block Default',
-    tiles = { 'color_block_default.png' },
-    is_ground_content = true
-})
 
+--remove all interaction groups from existing nodes
 for _, node in pairs(minetest.registered_nodes) do
     minetest.override_item(node.name, {
         groups = {}
     })
 end
+
+minetest.register_item(':', {
+    type = 'none',
+    wield_scale = {x = 0, y = 0, z = 0},
+})
+
 
 local function win_check()
     local winner = nil
