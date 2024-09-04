@@ -6,8 +6,6 @@ local GAME_SIZE = 10
 local start_game = nil
 local ready = false
 --nodes
-
-
 minetest.register_node('color_block:default', {
     description = 'Color Block Default',
     tiles = { 'color_block_default.png' },
@@ -54,14 +52,10 @@ local function win_check()
 end
 
 local function reset_game_area()
-    local size = GAME_SIZE*2
-    local min_x = -size/2
-    local min_z = -size/2
-    local max_x = size/2
-    local max_z = size/2
+    local s = GAME_SIZE*2
     map = {}
-    for  x = min_x, max_x, 2 do
-        for  z = min_z, max_z, 2 do
+    for  x = -s/2, s/2, 2 do
+        for  z = -s/2, s/2, 2 do
             local pos = {x=x, y=0, z=z-GAME_AREA_DIST}
             local i = math.random(0,4)
             minetest.swap_node(pos, {name='color_block:stone_'..i})
@@ -71,13 +65,9 @@ local function reset_game_area()
 end
 
 local function remove_all_not(color)
-    local size = GAME_SIZE*2
-    local min_x = -size/2
-    local min_z = -size/2
-    local max_x = size/2
-    local max_z = size/2
-    for  x = min_x, max_x, 2 do
-        for  z = min_z, max_z, 2 do
+    local s = GAME_SIZE*2
+    for  x = -s/2, s/2, 2 do
+        for  z = -s/2, s/2, 2 do
                 local pos = {x=x, y=0, z=z-GAME_AREA_DIST}
                 local i = map[x..":"..z]
                 if i ~= color then
@@ -151,7 +141,7 @@ end
 
 minetest.after(1, function() 
     reset_game_area()
-    for x = -LOBBY_SIZE/2, LOBBY_SIZE/2 do
+    for x = -LOBBY_SIZE/2, LOBBY_SIZE/2 do  --build a lobby
         for z = -LOBBY_SIZE/2, LOBBY_SIZE/2 do
             minetest.set_node({x=x, y=0, z=z}, {name="color_block:default"})
         end
