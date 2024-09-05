@@ -8,14 +8,12 @@ local ready = false
 --nodes
 minetest.register_node('color_block:default', {
     description = 'Color Block Default',
-    tiles = { 'color_block_default.png' },
-    is_ground_content = true
+    tiles = { 'color_block_default.png' }
 })
 for i = 0, 4 do
     minetest.register_node('color_block:stone_'..i, {
         description = 'Color Block Node: ' .. colors[i+1],
-        tiles = { 'color_block'.. i ..'.png' },
-        is_ground_content = true
+        tiles = { 'color_block'.. i ..'.png' }
     })
 end
 
@@ -31,7 +29,7 @@ minetest.register_item(':', {
     wield_scale = {x = 0, y = 0, z = 0},
 })
 
-
+--game functions
 local function win_check()
     local winner = nil
     local n_standing = 0
@@ -51,28 +49,22 @@ local function win_check()
     end
 end
 
-local function reset_game_area()
+local function iter_grid(remove_not_color)
     local s = GAME_SIZE*2
-    map = {}
     for  x = -s/2, s/2, 2 do
         for  z = -s/2, s/2, 2 do
             local pos = {x=x, y=0, z=z-GAME_AREA_DIST}
-            local i = math.random(0,4)
-            minetest.swap_node(pos, {name='color_block:stone_'..i})
-            map[x..":"..z] = i
-        end
-    end
-end
-
-local function remove_all_not(color)
-    local s = GAME_SIZE*2
-    for  x = -s/2, s/2, 2 do
-        for  z = -s/2, s/2, 2 do
-                local pos = {x=x, y=0, z=z-GAME_AREA_DIST}
+            if remove_not_color then
                 local i = map[x..":"..z]
-                if i ~= color then
+                if i ~= remove_not_color then
                     minetest.swap_node(pos, {name="air"})
                 end
+            else
+                local i = math.random(0,4)
+                minetest.swap_node(pos, {name='color_block:stone_'..i})
+                map[x..":"..z] = i
+            end
+                
         end
     end
 end
@@ -99,19 +91,15 @@ end
 
 local function spawn_players()
     for _, player in pairs(minetest:get_connected_players()) do
-         local x_shift = math.random(0, GAME_SIZE)*2-GAME_SIZE
-         local z_shift = math.random(0, GAME_SIZE)*2-GAME_SIZE
-         player:set_pos({x=0+x_shift, y=1, z=-GAME_AREA_DIST+z_shift})
-         local meta = player:get_meta()
+        local x_shift = math.random(0, GAME_SIZE)*2-GAME_SIZE
+        local z_shift = math.random(0, GAME_SIZE)*2-GAME_SIZE
+        player:set_pos({x=0+x_shift, y=1, z=-GAME_AREA_DIST+z_shift})
+        local meta = player:get_meta()
         meta:set_int("in_game", 1)
     end
  end
 
-minetest.register_on_joinplayer(function(player, last_login)
-    player:set_pos({x=0,y=5,z=0})
-    start_game()
-end)
-
+--reset after fall
 minetest.register_globalstep(function(dtime)
     for _, player in pairs(minetest:get_connected_players()) do
         local pos = player:get_pos()
@@ -123,11 +111,21 @@ minetest.register_globalstep(function(dtime)
     end
 end)
 
+local function init()
+    iter_grid(nil)
+    for x = -LOBBY_SIZE/2, LOBBY_SIZE/2 do  --build a lobby
+        for z = -LOBBY_SIZE/2, LOBBY_SIZE/2 do
+            minetest.set_node({x=x, y=0, z=z}, {name="color_block:default"})
+        end
+    end
+end
+minetest.after(1, init)
+
 local function game_loop(seconds)
-    reset_game_area()
+    iter_grid(nil)
     local color = math.random(0,4)
     minetest.chat_send_all("Get to " .. colors[color+1] .. "!")
-    minetest.after(seconds, remove_all_not, color)
+    minetest.after(seconds, iter_grid, color)
     minetest.after(seconds+3, function()
         local winner = win_check()
         if not winner then
@@ -138,15 +136,6 @@ local function game_loop(seconds)
         end
     end)    
 end
-
-minetest.after(1, function() 
-    reset_game_area()
-    for x = -LOBBY_SIZE/2, LOBBY_SIZE/2 do  --build a lobby
-        for z = -LOBBY_SIZE/2, LOBBY_SIZE/2 do
-            minetest.set_node({x=x, y=0, z=z}, {name="color_block:default"})
-        end
-    end
-end)
 
 start_game = function()
     local n_players = #minetest.get_connected_players()
@@ -162,3 +151,8 @@ start_game = function()
         minetest.chat_send_all("Waiting for more players... Invite your friends!")
     end
 end
+
+minetest.register_on_joinplayer(function(player, last_login)
+    player:set_pos({x=0,y=5,z=0})
+    start_game()
+end)
